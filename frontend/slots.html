@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Available Slots</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 30px;
+            background: rgba(0,0,0,0.4);
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
+            gap: 25px;
+            padding: 40px;
+        }
+
+        /* SLOT CARD */
+        .slot {
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        /* AVAILABLE */
+        .available {
+            background: rgba(0,255,150,0.15);
+            border: 2px solid #00ff9c;
+        }
+
+        .available:hover {
+            transform: scale(1.05);
+            background: #00ff9c;
+            color: black;
+        }
+
+        /* BOOKED */
+        .booked {
+            background: rgba(255,0,0,0.15);
+            border: 2px solid red;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* STATUS TEXT */
+        .status {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>🚗 Parking Slots</h2>
+    <button onclick="goBack()">Back</button>
+</div>
+
+<div class="header">
+    <h3>Select Your Slot</h3>
+</div>
+
+<div class="grid" id="slots"></div>
+
+<script>
+
+    function goBack(){
+        window.location.href = "user-dashboard.html";
+    }
+
+    async function loadSlots(){
+
+        const res = await fetch("http://localhost:8080/slots/all");
+        const data = await res.json();
+
+        const container = document.getElementById("slots");
+        container.innerHTML = "";
+
+        data.forEach(slot => {
+
+            const div = document.createElement("div");
+
+            if(slot.status === "AVAILABLE"){
+                div.className = "slot available";
+                div.innerHTML = `
+                ${slot.slotNumber}
+                <div class="status">Available</div>
+            `;
+
+                div.onclick = () => {
+                    localStorage.setItem("selectedSlot", slot.slotNumber);
+                    window.location.href = "book.html";
+                };
+
+            } else {
+                div.className = "slot booked";
+                div.innerHTML = `
+                ${slot.slotNumber}
+                <div class="status">Booked</div>
+            `;
+            }
+
+            container.appendChild(div);
+        });
+    }
+
+    loadSlots();
+
+</script>
+
+</body>
+</html>

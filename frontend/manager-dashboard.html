@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manager Dashboard</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 30px;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .navbar button {
+            background: #00c6ff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+
+        /* CONTAINER */
+        .container {
+            padding: 30px;
+        }
+
+        /* STATS */
+        .cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            flex: 1;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        /* ACTIONS */
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .actions button {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: none;
+            background: #00c6ff;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .actions button:hover {
+            transform: scale(1.08);
+        }
+
+        /* GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        /* CARD ITEM */
+        .box {
+            background: rgba(255,255,255,0.08);
+            padding: 15px;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+        }
+
+        /* STATUS BADGE */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .available { background: green; }
+        .booked { background: orange; }
+        .completed { background: red; }
+
+        /* DELETE BUTTON */
+        .delete-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            background: crimson;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background: rgba(0,0,0,0.7);
+            justify-content:center;
+            align-items:center;
+        }
+
+        .modal-content {
+            background:#1e2a32;
+            padding:20px;
+            border-radius:10px;
+            width:300px;
+            text-align:center;
+        }
+
+        .modal-content input {
+            width:100%;
+            padding:10px;
+            margin:10px 0;
+        }
+
+        .modal-content button {
+            margin:5px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>🧑‍💼 Manager Dashboard</h2>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+
+    <!-- STATS -->
+    <div class="cards">
+        <div class="card">
+            <h3>Total</h3>
+            <p id="total">0</p>
+        </div>
+        <div class="card">
+            <h3>Available</h3>
+            <p id="available">0</p>
+        </div>
+        <div class="card">
+            <h3>Booked</h3>
+            <p id="booked">0</p>
+        </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+        <button onclick="openModal()">Add Slot</button>
+        <button onclick="viewBookings()">View Bookings</button>
+        <button onclick="manageSlots()">Manage Slots</button>
+    </div>
+
+    <div id="output"></div>
+
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3>Add Slot</h3>
+        <input type="text" id="slotInput" placeholder="Slot Number">
+        <button onclick="submitSlot()">Add</button>
+        <button onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+
+    /* LOAD STATS */
+    async function loadStats() {
+        const res = await fetch("http://localhost:8080/slots/all");
+        const data = await res.json();
+
+        document.getElementById("total").innerText = data.length;
+        document.getElementById("available").innerText =
+            data.filter(s=>s.status==="AVAILABLE").length;
+        document.getElementById("booked").innerText =
+            data.filter(s=>s.status==="BOOKED").length;
+    }
+    loadStats();
+
+    /* MODAL */
+    function openModal(){
+        document.getElementById("modal").style.display="flex";
+    }
+    function closeModal(){
+        document.getElementById("modal").style.display="none";
+    }
+
+    /* ADD SLOT */
+    async function submitSlot(){
+        const slotNumber = document.getElementById("slotInput").value;
+
+        await fetch("http://localhost:8080/slots/add",{
+            method:"POST",
+            headers:{ "Content-Type":"application/json"},
+            body: JSON.stringify({slotNumber})
+        });
+
+        closeModal();
+        loadStats();
+    }
+
+    /* BOOKINGS */
+    async function viewBookings(){
+        const res = await fetch("http://localhost:8080/booking/all");
+        const data = await res.json();
+
+        let html = "<div class='grid'>";
+
+        data.forEach(b=>{
+            html+=`
+        <div class="box">
+            <h3>Slot ${b.slotNumber}</h3>
+            <p>${b.vehicleType} (${b.vehicleNumber})</p>
+            <span class="badge ${b.status.toLowerCase()}">${b.status}</span>
+        </div>`;
+        });
+
+        html+="</div>";
+        document.getElementById("output").innerHTML=html;
+    }
+
+    /* MANAGE */
+    async function manageSlots(){
+        const res = await fetch("http://localhost:8080/slots/all");
+        const data = await res.json();
+
+        let html = "<div class='grid'>";
+
+        data.forEach(s=>{
+            html+=`
+        <div class="box">
+            <h3>${s.slotNumber}</h3>
+            <span class="badge ${s.status.toLowerCase()}">${s.status}</span>
+            <br>
+            <button class="delete-btn" onclick="deleteSlot(${s.id})">Delete</button>
+        </div>`;
+        });
+
+        html+="</div>";
+        document.getElementById("output").innerHTML=html;
+    }
+
+    /* DELETE */
+    async function deleteSlot(id){
+        await fetch(`http://localhost:8080/slots/delete/${id}`,{
+            method:"DELETE"
+        });
+        manageSlots();
+        loadStats();
+    }
+
+    /* LOGOUT */
+    function logout(){
+        localStorage.clear();
+        window.location.href="login.html";
+    }
+
+</script>
+
+</body>
+</html>

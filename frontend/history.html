@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Booking History</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            width: 280px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        .status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .completed {
+            color: #00ff88;
+        }
+
+        .cancelled {
+            color: #ff4d4d;
+        }
+
+        .empty {
+            text-align: center;
+            margin-top: 50px;
+            opacity: 0.7;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>📜 Booking History</h2>
+    <button onclick="goBack()">Back</button>
+</div>
+
+<div id="list" class="container"></div>
+
+<script>
+
+    function goBack() {
+        window.location.href = "user-dashboard.html";
+    }
+
+    async function loadHistory() {
+
+        const res = await fetch("http://localhost:8080/booking/history");
+
+        if (!res.ok) {
+            document.getElementById("list").innerHTML =
+                "<p class='empty'>Backend not running ❌</p>";
+            return;
+        }
+
+        const data = await res.json();
+
+        if (data.length === 0) {
+            document.getElementById("list").innerHTML =
+                "<p class='empty'>No history yet 📭</p>";
+            return;
+        }
+
+        let html = "";
+
+        data.forEach(b => {
+
+            let statusClass = b.status === "COMPLETED" ? "completed" : "cancelled";
+
+            html += `
+        <div class="card">
+            <h3>🚗 Slot ${b.slotNumber}</h3>
+            <p><b>Vehicle:</b> ${b.vehicleType}</p>
+            <p><b>Number:</b> ${b.vehicleNumber}</p>
+            <p><b>Time:</b> ${b.bookingTime}</p>
+            <p class="status ${statusClass}">${b.status}</p>
+        </div>
+        `;
+        });
+
+        document.getElementById("list").innerHTML = html;
+    }
+
+    loadHistory();
+
+</script>
+
+</body>
+</html>
